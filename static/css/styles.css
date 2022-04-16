@@ -1,0 +1,16 @@
+body {
+  background: rgb(255,255,255);
+}
+
+#hero {
+  font-family: 'Fira Sans', sans-serif;
+  background: #ffffff;
+  box-shadow: 0px 0px 4px 4px rgb(134,134,135);
+}
+
+.lang-list {
+  width: 100%;
+  font-family: 'Fira Sans', sans-serif;
+  padding: 10px;
+}
+
