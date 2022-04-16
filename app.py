@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, render_template, session
+from flask import Flask, request, render_template
 import os
 import uuid
 from dotenv import load_dotenv
@@ -12,21 +12,20 @@ load_dotenv()
 app = Flask(__name__)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    if request.method == 'POST':
-        # Get the data from the form
-        original_text = request.form['text']
-        target_lang = request.form['language']
-
-        # Translate the text
-        translated_text = translate(original_text, target_lang)
-
-    return render_template('index.html',
-                           translated_text=translated_text)
+    return render_template('index.html')
 
 
-def translate(text, target_lang):
+@app.route('/translate', methods=['POST'])
+def translate():
+    # Get request data
+    data = request.get_json()
+    # Get the text to translate
+    src_text = data['src-text']
+    # Get the language to translate to
+    trans_lang = data['trans-lang']
+
     # Load the API key from the environment variables
     key = os.getenv('KEY')
     endpoint = os.getenv('ENDPOINT')
@@ -34,7 +33,7 @@ def translate(text, target_lang):
 
     # Prepare API path and parameters
     path = '/translate?api-version=3.0'
-    params = '&to={}'.format(target_lang)
+    params = f'&to={trans_lang}'
 
     # Create full API url
     api_url = endpoint + path + params
@@ -48,14 +47,29 @@ def translate(text, target_lang):
     }
 
     # Create request body
-    body = [{'text': text}]
+    body = [{'text': src_text}]
 
     # Make the request (using POST)
     translator_request = requests.post(api_url, headers=headers, json=body)
     # Retrieve the response
     translator_response = translator_request.json()
-    # Extract the translated text
-    translated_text = translator_response[0]['translations'][0]['text']
+
+    # Extract the source language and the translated text
+    src_lang = translator_response[0]['detectedLanguage']['language']
+    trans_text = translator_response[0]['translations'][0]['text']
+    chk_lang = translator_response[0]['translations'][0]['to']
 
     # Return the translated text
-    return translated_text
+    if chk_lang == trans_lang:
+        result = {
+            'status': 'ok',
+            'src_text': src_text,
+            'src_lang': src_lang,
+            'trans_text': trans_text
+        }
+    else:
+        result = {
+            'status': 'bad'
+        }
+
+    return result
